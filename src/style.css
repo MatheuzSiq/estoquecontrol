@@ -33,6 +33,13 @@ h1 {
   text-align: left;
 }
 
+.top-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
 /* ================= INPUTS ================= */
 input {
   padding: 10px 12px;
@@ -61,7 +68,8 @@ button {
   color: #e2e8f0;
   transition: 0.2s ease;
   white-space: nowrap;
-  margin-top: 15px;
+  margin-top: 7px;
+  margin-bottom: 7px;
 }
 
 button:hover {
@@ -132,9 +140,14 @@ tr:hover {
     padding: 10px;
   }
 
+  .top-bar {
+    display: block;
+    flex-wrap:unset;
+  }
+
   .container {
+    width: 430px;
     padding: 16px;
-    max-width: 100%;
   }
 
   input {
