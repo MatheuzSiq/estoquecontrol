@@ -59,6 +59,10 @@ function Cadastro() {
     navigate("/");
   }
 
+  function voltar() {
+    navigate("/");
+  }
+
   return (
     <div className="container">
       <h1>{editIndex !== undefined ? "Editar" : "Novo"} Produto</h1>
@@ -101,6 +105,9 @@ function Cadastro() {
       <button onClick={adicionarLinha}>Adicionar Linha</button>
       <button onClick={salvar} className="primary">
         Salvar
+      </button>
+      <button onClick={voltar} className="delete">
+        Voltar
       </button>
     </div>
   );
