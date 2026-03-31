@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Galpao {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  ruas        Rua[]
+}
+
+model Rua {
+  id       String    @id @default(uuid())
+  name     String
+  galpaoId String
+  posicoes Posicao[]
+  galpao   Galpao    @relation(fields: [galpaoId], references: [id])
+}
+
+model Posicao {
+  id      String  @id @default(uuid())
+  ruaId   String
+  posicao String
+  niveis  Nivel[]
+  rua     Rua     @relation(fields: [ruaId], references: [id])
+}
+
+model Nivel {
+  id            String      @id @default(uuid())
+  posicaoId     String
+  nivel         String
+  inventory     Inventory[]
+  fromMovements Movements[] @relation("FromNivel")
+  toMovements   Movements[] @relation("ToNivel")
+  posicao       Posicao     @relation(fields: [posicaoId], references: [id])
+}
+
+model Catalog {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  description String
+  unit        String?
+  curve       String?
+  inventory   Inventory[]
+  movements   Movements[]
+}
+
+model Inventory {
+  id        String   @id @default(uuid())
+  date      DateTime
+  productId String
+  lote      String?
+  nivelId   String
+  quantity  Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  nivel     Nivel    @relation(fields: [nivelId], references: [id])
+  product   Catalog  @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@index([nivelId])
+  @@index([date])
+}
+
+model Movements {
+  id          String       @id @default(uuid())
+  type        MovementType
+  productId   String
+  lote        String?
+  quantity    Float
+  fromNivelId String?
+  toNivelId   String?
+  date        DateTime     @default(now())
+  createdAt   DateTime     @default(now())
+  fromNivel   Nivel?       @relation("FromNivel", fields: [fromNivelId], references: [id])
+  product     Catalog      @relation(fields: [productId], references: [id])
+  toNivel     Nivel?       @relation("ToNivel", fields: [toNivelId], references: [id])
+
+  @@index([productId])
+  @@index([date])
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("USER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum MovementType {
+  ENTRADA
+  SAIDA
+  MOVIMENTACAO
+}
