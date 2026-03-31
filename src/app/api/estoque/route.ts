@@ -25,8 +25,7 @@ export async function GET() {
       },
     });
 
-    // Verifica se os dados existem antes de acessar
-    const formattedEstoque = inventory.map((item) => ({
+    const formattedEstoque = inventory.map((item: any) => ({
       id: item.id,
       productCode: item.product?.code || "N/A",
       productDescription: item.product?.description || "N/A",
@@ -41,9 +40,9 @@ export async function GET() {
 
     return NextResponse.json(formattedEstoque);
   } catch (error) {
-    console.error("Erro detalhado ao buscar estoque:", error);
+    console.error("Erro ao buscar estoque:", error);
     return NextResponse.json(
-      { error: "Erro ao buscar estoque", details: String(error) },
+      { error: "Erro ao buscar estoque" },
       { status: 500 },
     );
   }
@@ -53,14 +52,6 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const { productId, lote, quantity, nivelId, date } = data;
-
-    // Validações mais robustas
-    if (!productId || !nivelId || quantity === undefined) {
-      return NextResponse.json(
-        { error: "Campos obrigatórios: productId, nivelId, quantity" },
-        { status: 400 },
-      );
-    }
 
     console.log("Recebendo dados:", {
       productId,
@@ -94,23 +85,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Converte quantidade para número
-    const quantityNum =
-      typeof quantity === "string" ? parseFloat(quantity) : quantity;
-
-    if (isNaN(quantityNum) || quantityNum <= 0) {
-      return NextResponse.json(
-        { error: "Quantidade inválida" },
-        { status: 400 },
-      );
-    }
-
     // Cria o item no inventory
     const newInventory = await prisma.inventory.create({
       data: {
         productId,
         lote: lote || null,
-        quantity: quantityNum,
+        quantity: parseFloat(quantity),
         nivelId,
         date: date ? new Date(date) : new Date(),
       },
@@ -132,30 +112,27 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Verificação de segurança antes de acessar propriedades aninhadas
-    const responseItem = {
-      id: newInventory.id,
-      productCode: newInventory.product?.code || "N/A",
-      productDescription: newInventory.product?.description || "N/A",
-      lote: newInventory.lote || null,
-      quantity: newInventory.quantity,
-      date: newInventory.date,
-      galpao: newInventory.nivel?.posicao?.rua?.galpao?.name || "N/A",
-      rua: newInventory.nivel?.posicao?.rua?.name || "N/A",
-      posicao: newInventory.nivel?.posicao?.posicao || 0,
-      nivel: newInventory.nivel?.nivel || 0,
-    };
-
-    console.log("Item criado com sucesso:", responseItem);
+    console.log("Item criado:", newInventory);
 
     return NextResponse.json({
       success: true,
-      item: responseItem,
+      item: {
+        id: newInventory.id,
+        productCode: newInventory.product.code,
+        productDescription: newInventory.product.description,
+        lote: newInventory.lote,
+        quantity: newInventory.quantity,
+        date: newInventory.date,
+        galpao: newInventory.nivel.posicao.rua.galpao.name,
+        rua: newInventory.nivel.posicao.rua.name,
+        posicao: newInventory.nivel.posicao.posicao,
+        nivel: newInventory.nivel.nivel,
+      },
     });
   } catch (error) {
-    console.error("Erro detalhado ao criar item no estoque:", error);
+    console.error("Erro ao criar item no estoque:", error);
     return NextResponse.json(
-      { error: "Erro ao criar item no estoque", details: String(error) },
+      { error: "Erro ao criar item no estoque" },
       { status: 500 },
     );
   }
