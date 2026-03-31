@@ -9,7 +9,7 @@ export async function middleware(req: any) {
   const { pathname } = req.nextUrl;
 
   // Rotas públicas
-  if (pathname === "/login" || pathname === "/register") {
+  if (pathname === "/login" /*|| pathname === "/register"*/) {
     if (token) {
       return NextResponse.redirect(new URL("/estoque", req.url));
     }
