@@ -25,24 +25,25 @@ export async function GET() {
       },
     });
 
+    // Verifica se os dados existem antes de acessar
     const formattedEstoque = inventory.map((item) => ({
       id: item.id,
-      productCode: item.product.code,
-      productDescription: item.product.description,
-      lote: item.lote,
+      productCode: item.product?.code || "N/A",
+      productDescription: item.product?.description || "N/A",
+      lote: item.lote || "Sem lote",
       quantity: item.quantity,
       date: item.date,
-      galpao: item.nivel.posicao.rua.galpao.name,
-      rua: item.nivel.posicao.rua.name,
-      posicao: item.nivel.posicao.posicao,
-      nivel: item.nivel.nivel,
+      galpao: item.nivel?.posicao?.rua?.galpao?.name || "N/A",
+      rua: item.nivel?.posicao?.rua?.name || "N/A",
+      posicao: item.nivel?.posicao?.posicao || 0,
+      nivel: item.nivel?.nivel || 0,
     }));
 
     return NextResponse.json(formattedEstoque);
   } catch (error) {
-    console.error("Erro ao buscar estoque:", error);
+    console.error("Erro detalhado ao buscar estoque:", error);
     return NextResponse.json(
-      { error: "Erro ao buscar estoque" },
+      { error: "Erro ao buscar estoque", details: String(error) },
       { status: 500 },
     );
   }
@@ -52,6 +53,14 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const { productId, lote, quantity, nivelId, date } = data;
+
+    // Validações mais robustas
+    if (!productId || !nivelId || quantity === undefined) {
+      return NextResponse.json(
+        { error: "Campos obrigatórios: productId, nivelId, quantity" },
+        { status: 400 },
+      );
+    }
 
     console.log("Recebendo dados:", {
       productId,
@@ -85,12 +94,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Converte quantidade para número
+    const quantityNum =
+      typeof quantity === "string" ? parseFloat(quantity) : quantity;
+
+    if (isNaN(quantityNum) || quantityNum <= 0) {
+      return NextResponse.json(
+        { error: "Quantidade inválida" },
+        { status: 400 },
+      );
+    }
+
     // Cria o item no inventory
     const newInventory = await prisma.inventory.create({
       data: {
         productId,
         lote: lote || null,
-        quantity: parseFloat(quantity),
+        quantity: quantityNum,
         nivelId,
         date: date ? new Date(date) : new Date(),
       },
@@ -112,27 +132,30 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log("Item criado:", newInventory);
+    // Verificação de segurança antes de acessar propriedades aninhadas
+    const responseItem = {
+      id: newInventory.id,
+      productCode: newInventory.product?.code || "N/A",
+      productDescription: newInventory.product?.description || "N/A",
+      lote: newInventory.lote || null,
+      quantity: newInventory.quantity,
+      date: newInventory.date,
+      galpao: newInventory.nivel?.posicao?.rua?.galpao?.name || "N/A",
+      rua: newInventory.nivel?.posicao?.rua?.name || "N/A",
+      posicao: newInventory.nivel?.posicao?.posicao || 0,
+      nivel: newInventory.nivel?.nivel || 0,
+    };
+
+    console.log("Item criado com sucesso:", responseItem);
 
     return NextResponse.json({
       success: true,
-      item: {
-        id: newInventory.id,
-        productCode: newInventory.product.code,
-        productDescription: newInventory.product.description,
-        lote: newInventory.lote,
-        quantity: newInventory.quantity,
-        date: newInventory.date,
-        galpao: newInventory.nivel.posicao.rua.galpao.name,
-        rua: newInventory.nivel.posicao.rua.name,
-        posicao: newInventory.nivel.posicao.posicao,
-        nivel: newInventory.nivel.nivel,
-      },
+      item: responseItem,
     });
   } catch (error) {
-    console.error("Erro ao criar item no estoque:", error);
+    console.error("Erro detalhado ao criar item no estoque:", error);
     return NextResponse.json(
-      { error: "Erro ao criar item no estoque" },
+      { error: "Erro ao criar item no estoque", details: String(error) },
       { status: 500 },
     );
   }
