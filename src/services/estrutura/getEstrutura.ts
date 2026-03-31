@@ -25,7 +25,9 @@ export async function getEstrutura() {
     for (const rua of galpao.ruas) {
       for (const posicao of rua.posicoes) {
         for (const nivel of posicao.niveis) {
-          const ocupado = nivel.inventory.some((i) => i.quantity > 0);
+          const ocupado = nivel.inventory.some(
+            (i: (typeof nivel.inventory)[number]) => i.quantity > 0,
+          );
 
           enderecos.push({
             id: nivel.id,
@@ -42,25 +44,22 @@ export async function getEstrutura() {
 
   // Ordenar os endereços
   const enderecosOrdenados = enderecos.sort((a, b) => {
-    // Primeiro por rua
     if (a.rua < b.rua) return -1;
     if (a.rua > b.rua) return 1;
 
-    // Se rua for igual, por posição
-    // Tenta converter para número para ordenação numérica
     const posA = parseFloat(a.posicao);
     const posB = parseFloat(b.posicao);
+
     if (!isNaN(posA) && !isNaN(posB)) {
       if (posA !== posB) return posA - posB;
     } else {
-      // Se não for número, ordena como string
       if (a.posicao < b.posicao) return -1;
       if (a.posicao > b.posicao) return 1;
     }
 
-    // Se posição for igual, por nível
     const nivelA = parseFloat(a.nivel);
     const nivelB = parseFloat(b.nivel);
+
     if (!isNaN(nivelA) && !isNaN(nivelB)) {
       return nivelA - nivelB;
     } else {
