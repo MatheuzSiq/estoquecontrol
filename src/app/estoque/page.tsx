@@ -20,8 +20,11 @@ interface InventoryItem {
 
 export default function Home() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [filtered, setFiltered] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState("");
 
   async function loadInventory(page = 1, search = "") {
     setLoading(true);
@@ -29,11 +32,11 @@ export default function Home() {
       const res = await fetch(
         `/api/estoque?page=${page}&limit=12&search=${search}`
       );
-  
+
       const data = await res.json();
-  
+
       setInventory(data.items);
-      setFiltered(data.items);
+      setTotalPages(data.totalPages);
     } catch (error) {
       console.error(error);
     } finally {
@@ -41,85 +44,19 @@ export default function Home() {
     }
   }
 
-  const [page, setPage] = useState(1);
-
+  // 🔁 Sempre que página ou busca mudar
   useEffect(() => {
-    loadInventory(page);
-  }, [page]);
+    loadInventory(page, search);
+  }, [page, search]);
 
-  function handleSearch(filters: {
-    search?: string;
-    galpao?: string;
-    rua?: string;
-    posicao?: string;
-    nivel?: string;
-    productCode?: string;
-    productDescription?: string;
-    lote?: string;
-  }) {
-    const result = inventory.filter((item) => {
-      // Busca geral (código, descrição, lote, localização)
-      const searchTerm = filters.search ? filters.search.toLowerCase() : "";
-      const matchesSearch = filters.search
-        ? item.productCode.toLowerCase().includes(searchTerm) ||
-          item.productDescription.toLowerCase().includes(searchTerm) ||
-          (item.lote && item.lote.toLowerCase().includes(searchTerm)) ||
-          `${item.galpao} ${item.rua} ${item.posicao} ${item.nivel}`
-            .toLowerCase()
-            .includes(searchTerm)
-        : true;
-
-      const matchesGalpao = filters.galpao
-        ? item.galpao.toLowerCase().includes(filters.galpao.toLowerCase())
-        : true;
-
-      const matchesRua = filters.rua
-        ? item.rua.toLowerCase().includes(filters.rua.toLowerCase())
-        : true;
-
-      const matchesPosicao = filters.posicao
-        ? item.posicao.toLowerCase().includes(filters.posicao.toLowerCase())
-        : true;
-
-      const matchesNivel = filters.nivel
-        ? item.nivel.toLowerCase().includes(filters.nivel.toLowerCase())
-        : true;
-
-      const matchesProductCode = filters.productCode
-        ? item.productCode
-            .toLowerCase()
-            .includes(filters.productCode.toLowerCase())
-        : true;
-
-      const matchesProductDescription = filters.productDescription
-        ? item.productDescription
-            .toLowerCase()
-            .includes(filters.productDescription.toLowerCase())
-        : true;
-
-      const matchesLote = filters.lote
-        ? item.lote &&
-          item.lote.toLowerCase().includes(filters.lote.toLowerCase())
-        : true;
-
-      return (
-        matchesSearch &&
-        matchesGalpao &&
-        matchesRua &&
-        matchesPosicao &&
-        matchesNivel &&
-        matchesProductCode &&
-        matchesProductDescription &&
-        matchesLote
-      );
-    });
-
-    setFiltered(result);
+  // 🔍 Busca agora vai pro backend
+  function handleSearch(filters: { search?: string }) {
+    setPage(1); // volta pra primeira página
+    setSearch(filters.search || "");
   }
 
   async function handleEdit(item: InventoryItem) {
     console.log("Editar:", item);
-    // Implementar lógica de edição
   }
 
   async function handleDelete(item: InventoryItem) {
@@ -132,7 +69,7 @@ export default function Home() {
       });
 
       if (res.ok) {
-        await loadInventory();
+        await loadInventory(page, search);
         alert("Item excluído com sucesso!");
       } else {
         alert("Erro ao excluir");
@@ -158,15 +95,14 @@ export default function Home() {
           <p className="text-gray-400 text-center py-10">Carregando...</p>
         )}
 
-        {!loading && filtered.length === 0 && (
+        {!loading && inventory.length === 0 && (
           <p className="text-gray-400 text-center py-10">
-            Nenhum item encontrado no estoque. Tente ajustar os filtros ou
-            adicione novos itens.
+            Nenhum item encontrado no estoque.
           </p>
         )}
 
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((item) => (
+          {inventory.map((item) => (
             <InventoryCard
               key={item.id}
               item={item}
@@ -174,6 +110,29 @@ export default function Home() {
               onDelete={handleDelete}
             />
           ))}
+        </div>
+
+        {/* 🔥 PAGINAÇÃO */}
+        <div className="flex justify-center items-center gap-4 mt-6">
+          <button
+            onClick={() => setPage((p) => Math.max(p - 1, 1))}
+            disabled={page === 1}
+            className="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50"
+          >
+            Anterior
+          </button>
+
+          <span className="text-white">
+            Página {page} de {totalPages}
+          </span>
+
+          <button
+            onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+            disabled={page === totalPages}
+            className="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50"
+          >
+            Próxima
+          </button>
         </div>
       </div>
     </Providers>
