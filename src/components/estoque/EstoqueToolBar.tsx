@@ -16,7 +16,7 @@ interface Props {
 }
 
 export default function InventoryToolbar({ onSearch }: Props) {
-  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<any>({});
   const [openFilters, setOpenFilters] = useState(false);
 
   const [filtroGalpao, setFiltroGalpao] = useState("");
