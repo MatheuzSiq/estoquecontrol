@@ -49,13 +49,13 @@ export default function Home() {
 
   // 🔁 Sempre que página ou busca mudar
   useEffect(() => {
-    loadInventory(page, search);
-  }, [page, search]);
+    loadInventory(page, filters);
+  }, [page, filters]);
 
   // 🔍 Busca agora vai pro backend
-  function handleSearch(filters: { search?: string }) {
-    setPage(1); // volta pra primeira página
-    setSearch(filters.search || "");
+  function handleSearch(newFilters: any) {
+    setPage(1);
+    setFilters(newFilters);
   }
 
   async function handleEdit(item: InventoryItem) {
