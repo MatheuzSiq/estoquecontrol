@@ -1,5 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+
+
+type InventoryWithRelations = Prisma.InventoryGetPayload<{
+  select: {
+    id: true;
+    lote: true;
+    quantity: true;
+    date: true;
+    product: {
+      select: {
+        code: true;
+        description: true;
+      };
+    };
+    nivel: {
+      select: {
+        nivel: true;
+        posicao: {
+          select: {
+            posicao: true;
+            rua: {
+              select: {
+                name: true;
+                galpao: {
+                  select: {
+                    name: true;
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,7 +77,8 @@ export async function GET(request: NextRequest) {
         }
       : {};
 
-    const [inventory, total] = await Promise.all([
+    const [inventory, total]: [InventoryWithRelations[], number] =
+  await Promise.all([
       prisma.inventory.findMany({
         where,
         skip,
