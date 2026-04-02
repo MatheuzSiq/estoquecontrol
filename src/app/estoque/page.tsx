@@ -25,6 +25,7 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<any>({});
 
   async function loadInventory(page = 1, filters: any = {}) {
     setLoading(true);
