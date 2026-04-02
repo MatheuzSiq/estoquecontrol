@@ -41,9 +41,11 @@ export default function Home() {
     }
   }
 
+  const [page, setPage] = useState(1);
+
   useEffect(() => {
-    loadInventory();
-  }, []);
+    loadInventory(page);
+  }, [page]);
 
   function handleSearch(filters: {
     search?: string;
