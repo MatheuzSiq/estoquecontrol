@@ -26,15 +26,18 @@ export default function Home() {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
 
-  async function loadInventory(page = 1, search = "") {
+  async function loadInventory(page = 1, filters: any = {}) {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/estoque?page=${page}&limit=12&search=${search}`
-      );
-
+      const query = new URLSearchParams({
+        page: String(page),
+        limit: "12",
+        ...filters,
+      });
+  
+      const res = await fetch(`/api/estoque?${query.toString()}`);
       const data = await res.json();
-
+  
       setInventory(data.items);
       setTotalPages(data.totalPages);
     } catch (error) {
