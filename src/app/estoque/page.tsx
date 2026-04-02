@@ -23,14 +23,19 @@ export default function Home() {
   const [filtered, setFiltered] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  async function loadInventory() {
+  async function loadInventory(page = 1, search = "") {
+    setLoading(true);
     try {
-      const res = await fetch("/api/estoque");
+      const res = await fetch(
+        `/api/estoque?page=${page}&limit=12&search=${search}`
+      );
+  
       const data = await res.json();
-      setInventory(data);
-      setFiltered(data);
+  
+      setInventory(data.items);
+      setFiltered(data.items);
     } catch (error) {
-      console.error("Erro ao carregar inventário:", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
