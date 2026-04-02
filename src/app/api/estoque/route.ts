@@ -1,31 +1,93 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const inventory = await prisma.inventory.findMany({
-      include: {
-        product: true,
-        nivel: {
-          include: {
-            posicao: {
-              include: {
-                rua: {
-                  include: {
-                    galpao: true,
+    const { searchParams } = new URL(request.url);
+
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 12;
+    const search = searchParams.get("search") || "";
+
+    const skip = (page - 1) * limit;
+
+    const where = search
+      ? {
+          OR: [
+            {
+              product: {
+                code: {
+                  contains: search,
+                  mode: "insensitive",
+                },
+              },
+            },
+            {
+              product: {
+                description: {
+                  contains: search,
+                  mode: "insensitive",
+                },
+              },
+            },
+            {
+              lote: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+          ],
+        }
+      : {};
+
+    const [inventory, total] = await Promise.all([
+      prisma.inventory.findMany({
+        where,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          lote: true,
+          quantity: true,
+          date: true,
+
+          product: {
+            select: {
+              code: true,
+              description: true,
+            },
+          },
+
+          nivel: {
+            select: {
+              nivel: true,
+              posicao: {
+                select: {
+                  posicao: true,
+                  rua: {
+                    select: {
+                      name: true,
+                      galpao: {
+                        select: {
+                          name: true,
+                        },
+                      },
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-      orderBy: {
-        date: "desc",
-      },
-    });
+        orderBy: {
+          date: "desc",
+        },
+      }),
 
-    const formattedEstoque = inventory.map((item: any) => ({
+      prisma.inventory.count({ where }),
+    ]);
+
+    const formattedEstoque = inventory.map((item) => ({
       id: item.id,
       productCode: item.product?.code || "N/A",
       productDescription: item.product?.description || "N/A",
@@ -38,12 +100,17 @@ export async function GET() {
       nivel: item.nivel?.nivel || 0,
     }));
 
-    return NextResponse.json(formattedEstoque);
+    return NextResponse.json({
+      items: formattedEstoque,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     console.error("Erro ao buscar estoque:", error);
     return NextResponse.json(
       { error: "Erro ao buscar estoque" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
