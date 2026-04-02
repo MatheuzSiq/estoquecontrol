@@ -48,34 +48,106 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    const where = search
+    const galpao = searchParams.get("galpao") || "";
+const rua = searchParams.get("rua") || "";
+const posicao = searchParams.get("posicao") || "";
+const nivel = searchParams.get("nivel") || "";
+const productCode = searchParams.get("productCode") || "";
+const productDescription = searchParams.get("productDescription") || "";
+const lote = searchParams.get("lote") || "";
+
+const where: any = {
+  AND: [
+    search
       ? {
           OR: [
             {
               product: {
-                code: {
-                  contains: search,
-                  mode: "insensitive",
-                },
+                code: { contains: search, mode: "insensitive" },
               },
             },
             {
               product: {
-                description: {
-                  contains: search,
-                  mode: "insensitive",
-                },
+                description: { contains: search, mode: "insensitive" },
               },
             },
             {
-              lote: {
-                contains: search,
-                mode: "insensitive",
-              },
+              lote: { contains: search, mode: "insensitive" },
             },
           ],
         }
-      : {};
+      : {},
+
+    productCode
+      ? {
+          product: {
+            code: { contains: productCode, mode: "insensitive" },
+          },
+        }
+      : {},
+
+    productDescription
+      ? {
+          product: {
+            description: {
+              contains: productDescription,
+              mode: "insensitive",
+            },
+          },
+        }
+      : {},
+
+    lote
+      ? {
+          lote: { contains: lote, mode: "insensitive" },
+        }
+      : {},
+
+    galpao
+      ? {
+          nivel: {
+            posicao: {
+              rua: {
+                galpao: {
+                  name: { contains: galpao, mode: "insensitive" },
+                },
+              },
+            },
+          },
+        }
+      : {},
+
+    rua
+      ? {
+          nivel: {
+            posicao: {
+              rua: {
+                name: { contains: rua, mode: "insensitive" },
+              },
+            },
+          },
+        }
+      : {},
+
+    posicao
+      ? {
+          nivel: {
+            posicao: {
+              posicao: Number(posicao),
+            },
+          },
+        }
+      : {},
+
+    nivel
+      ? {
+          nivel: {
+            nivel: Number(nivel),
+          },
+        }
+      : {},
+  ],
+};
 
     const [inventory, total]: [InventoryWithRelations[], number] =
   await Promise.all([
